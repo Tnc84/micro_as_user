@@ -1,5 +1,3 @@
-jwt:
-  secret: "password"
 server:
   port : 8091
 spring:

@@ -8,14 +8,11 @@ import com.tnc.userManagement.service.exception.EmailNotFoundException;
 import com.tnc.userManagement.service.exception.UserNotFoundException;
 import com.tnc.userManagement.service.exception.UsernameExistException;
 import com.tnc.userManagement.service.model.HttpResponse;
-import com.tnc.userManagement.service.security.UserPrincipal;
 import com.tnc.userManagement.service.validation.OnCreate;
 import com.tnc.userManagement.service.validation.OnUpdate;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,22 +32,6 @@ public class UserController {
     public static final String USER_DELETED_SUCCESSFULLY = "User deleted successfully. ";
     private final IUserService userService;
     private final UserDTOMapper userDTOMapper;
-
-    @PostMapping("/register")
-    @Validated(OnCreate.class)
-    public ResponseEntity<UserDTO> register(@RequestBody UserDTO userDTO) throws EmailExistException, MessagingException, EmailNotFoundException {
-        var user = userDTOMapper.toDTO(userService.register(userDTO.firstName(), userDTO.lastName(), userDTO.email()));
-        return new ResponseEntity<>(user, OK);
-    }
-
-    @PostMapping("/login")
-    @Validated(OnUpdate.class)
-    public ResponseEntity<UserDTO> login(@RequestBody UserDTO userDTO) {
-        var loginUser = userService.login(userDTOMapper.toDomain(userDTO));
-        UserPrincipal userPrincipal = new UserPrincipal(loginUser);
-        HttpHeaders jwtHeader = userService.getJwtHeader(userPrincipal);
-        return new ResponseEntity<>(userDTOMapper.toDTO(loginUser), jwtHeader, OK);
-    }
 
     @PostMapping("/add")
     @Validated(OnCreate.class)
@@ -74,7 +55,7 @@ public class UserController {
         return new ResponseEntity<>(userDTOMapper.toDTO(userDomain), OK);
     }
 
-    @GetMapping("/list")
+    @GetMapping()
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         List<UserDTO> users = userDTOMapper.toDTOList(userService.getAll());
         return new ResponseEntity<>(users, OK);
@@ -87,7 +68,6 @@ public class UserController {
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('user:delete')")
     public ResponseEntity<HttpResponse> deleteUser(@PathVariable("id") long id) {
         userService.deleteUser(id);
         return response(NO_CONTENT, USER_DELETED_SUCCESSFULLY);
